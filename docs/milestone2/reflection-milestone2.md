@@ -10,9 +10,9 @@ What is implemented:
 
 What is not fully implemented yet:
 - We are still using a simple feature set and baseline preprocessing strategy.
-- Include Amenities and other important features in models
+- Amenities and possibly other important features in ML models
 - More features and accuracy of tourist matches scoring system
-- A comprehensively wrangled and cleaned dataset (cleaned data)
+- Cleaned/Processed data - A comprehensively wrangled and cleaned dataset (cleaned/processed data)
 - UI styling and layout remain at prototype quality and are not final.
 
 Known limitations:
@@ -22,7 +22,7 @@ Known limitations:
 
 Future improvements:
 - We aim to improve the 2 ML models accuracy (in RQ2 and RQ3) with more appropriate feature selection and maybe include additionaly important features in further milestones, particularly for the price model, the rating model is already quite accurate.
-- We aim to complete a comprehensive data wrangling and cleaning process to produce a cleaned version of the datset to further optimize accuracy in our ML models. This is why we decided to skip data cleaning for milestone 2, because we want to do it thoroughly and carefully to help maximize ML accuracy.
+- We aim to complete a comprehensive data wrangling and cleaning (processed data) process to produce a cleaned version of the datset to further optimize accuracy in our ML models. This is why we decided to skip the data cleaning (processed data) part for milestone 2, because we want to do it thoroughly and carefully in order to help maximize ML accuracy.
 - From the previous point, we aim to appropriately wrangle the "amenities" column of the datset into individual binary columns for only the significant amenities, to also help further maximize prediction accuracy
 - Add richer model diagnostics and more robust evaluation reporting.
 - Expand feature engineering (amenities, text-derived signals, and location enrichments).
