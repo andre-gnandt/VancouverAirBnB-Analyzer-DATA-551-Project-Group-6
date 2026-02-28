@@ -1,53 +1,39 @@
-# Vancouver AirBnB Analyzer
+# Vancouver AirBnB Analyzer 
+# DATA-551-Project-Group-6
+
+## App Overview  
+The app presents a dashboard to the audience with various features, allowing them to interact with and customize the features of the dash to obtain results related to all 3 of our research questions. The results are displayed in a listings map and list (for RQ1 best tourist listings) or a predicted price and rating followed by most influential factors for each (for RQ2 and RQ3).  
+  
+For RQ1, the user is able to customize the filters under the "best Airbnb options for tourists" panel. After applying filters, the best matching Airbnb options (in a tourist setting) are listed in descending order of best match, with a map showing each one's location.  
+  
+For RQ2, the user is able to customize the predictor values under the "predicting guest ratings" panel to obtain a predicted rating for a prospective Airbnb. The predictors are also listed in order from greatest to least influence on ratings.  
+  
+For RQ3, the user is able to customize the predictor values under the "price estimator" panel to obtain an estimated price of prospective Airbnb. The predictors in the panel are also listed from greatest to least influence on price.  
+  
+The 3 columns (for each RQ) are independent of each other, and the behavior or customization (either through filters or predictors) of one does not affect another.  
+  
+## Dashboard Sketch
+![Dashboard sketch](Sketch.png)
 
 ## Current Stage (Rudimentary)
 This version is an early collaboration stage with:
-1. A cleaner three-panel Dash dashboard.
+1. A cleaner three-tab Dash dashboard.
 2. RQ1 tourist listing filtering/ranking.
-3. RQ2 and RQ3 prediction using **neural network only** with selectable backend:
-   - sklearn MLP (`MLPRegressor`)
-   - PyTorch MLP (if `torch` is available)
+3. RQ2 and RQ3 prediction using **Random Forest** with selectable backend:
 4. Three visible plots for milestone 2 usability:
    - RQ1 map
-   - RQ2 bar chart (Altair when installed, Plotly fallback otherwise)
-   - RQ3 bar chart (Altair when installed, Plotly fallback otherwise)
+   - RQ2 estimator and bar chart (Altair)
+   - RQ3 estimator and bar chart (Altair)
 
 ## Data
 - `data/raw/listings.csv`
 
-## Run ML (NN only)
-From repo root:
-
-```powershell
-py -3.13 -m venv .venv
-$PY = ".\.venv\Scripts\python.exe"
-& $PY -m pip install --upgrade pip
-& $PY -m pip install -r requirements.txt
-& $PY -m src.ml_nn --backend auto
+## Run Dashboard  
+From the root directory of the repository:
 ```
-
-Model artifacts are saved to:
-- `artifacts/nn_only/rating_mlp.joblib`
-- `artifacts/nn_only/price_mlp.joblib`
-- `artifacts/nn_only/metrics.json`
-
-To force a backend:
-```powershell
-& $PY -m src.ml_nn --backend sklearn
-& $PY -m src.ml_nn --backend torch
-```
-
-## Run Dashboard
-```powershell
-$PY = ".\.venv\Scripts\python.exe"
-& $PY -m src.app
-```
-
+python src/app.py
+```  
+  
 Then open:
 - `http://127.0.0.1:8050`
 
-For deployment (if needed), use `src.app:server`.
-
-## Notebook
-NN-only model notebook:
-- `src/Ml_models.ipynb`
