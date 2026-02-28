@@ -24,7 +24,7 @@ This version is an early collaboration stage with:
    - RQ1 map
    - RQ2 estimator and bar chart (Altair)
    - RQ3 estimator and bar chart (Altair)
-
+   
 ## Data
 - `data/raw/listings.csv`
 
