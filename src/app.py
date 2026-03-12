@@ -366,6 +366,7 @@ info_style = {"backgroundColor": "#edf5ff", "padding": "8px", "borderRadius": "8
 
 
 app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
+server = app.server
 app.layout = dbc.Container([
     html.H1("Vancouver Airbnb Analyzer"),
     dbc.Tabs([
