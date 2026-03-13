@@ -16,7 +16,7 @@ import dash
 import altair as alt
 import dash_vega_components as dvc
 import pandas as pd
-from dash import dash_table
+from dash import dash_table, no_update
 import copy
 import dash_html_components as html
 import dash_core_components as dcc
@@ -334,7 +334,7 @@ def _build_map_figure(frame: pd.DataFrame):
         hover_name="name",
         labels = {"tourist_score": "Score", "price_num" : "Price Per Night", "review_scores_rating":"Rating", 
         "neighbourhood_cleansed":"Neighborhood", "accommodates": "Max Guests"},
-        hover_data={"price_num": "$:.2f", "review_scores_rating": ":.2f", "neighbourhood_cleansed": True, "latitude": False,
+        hover_data={"price_num": ":.2f", "review_scores_rating": ":.2f", "neighbourhood_cleansed": True, "latitude": False,
         "longitude": False},
         zoom=10,
         height=360,
@@ -492,7 +492,7 @@ app.layout = dbc.Container([
                             min=1,          
                             step=1,         
                             placeholder="1, 2, 3...",
-                            value = 1,
+                            value = 2,
                             required = True,
                             style={'width': '250px'}
                         ),
@@ -505,7 +505,7 @@ app.layout = dbc.Container([
                             min=1,          
                             step=1,         
                             placeholder="1, 2, 3...",
-                            value = 1,
+                            value = 2,
                             required = True,
                             style={'width': '250px'}
                         ),
@@ -518,7 +518,7 @@ app.layout = dbc.Container([
                             min=0.5,          
                             step=0.5,         
                             placeholder="0.5, 1, 1.5, 2, 2.5...",
-                            value = 1,
+                            value = 2,
                             required = True,
                             style={'width': '250px'}
                         ),
@@ -679,7 +679,7 @@ app.layout = dbc.Container([
                             min=1,          
                             step=1,         
                             placeholder="1, 2, 3...",
-                            value = 1,
+                            value = 2,
                             required = True,
                             style={'width': '250px'}
                         ),
@@ -692,7 +692,7 @@ app.layout = dbc.Container([
                             min=1,          
                             step=1,         
                             placeholder="1, 2, 3...",
-                            value = 1,
+                            value = 2,
                             required = True,
                             style={'width': '250px'}
                         ),
@@ -705,7 +705,7 @@ app.layout = dbc.Container([
                             min=0.5,          
                             step=0.5,         
                             placeholder="0.5, 1, 1.5, 2, 2.5...",
-                            value = 1,
+                            value = 2,
                             required = True,
                             style={'width': '250px'}
                         ),
@@ -820,15 +820,24 @@ def cascade_on_price_accommodates(accommodates, beds_value, bathrooms_value, bed
 
     beds_min = math.ceil(accommodates / 2)
     beds_max = accommodates
-    beds_value = min(max(beds_value or beds_min, beds_min), beds_max)
+    beds_new_value = min(max(beds_value or beds_min, beds_min), beds_max)
+
+    if beds_value == beds_new_value : 
+        beds_new_value = no_update
 
     bathrooms_max = accommodates
-    bathrooms_value = min(bathrooms_max, bathrooms_value)
+    bathrooms_new_value = min(bathrooms_max, bathrooms_value)
+
+    if bathrooms_value == bathrooms_new_value : 
+        bathrooms_new_value = no_update
 
     bedrooms_max = accommodates
-    bedrooms_value = min(bedrooms_max, bedrooms_value)
+    bedrooms_new_value = min(bedrooms_max, bedrooms_value)
 
-    return beds_value, bathrooms_value, bedrooms_value
+    if bedrooms_new_value == bedrooms_value :
+        bedrooms_new_value = no_update
+
+    return beds_new_value, bathrooms_new_value, bedrooms_new_value
 
 @app.callback( 
     Output("r-beds-input", "value", allow_duplicate=True),
@@ -846,15 +855,24 @@ def cascade_on_rating_accommodates(accommodates, beds_value, bathrooms_value, be
 
     beds_min = math.ceil(accommodates / 2)
     beds_max = accommodates
-    beds_value = min(max(beds_value or beds_min, beds_min), beds_max)
+    beds_new_value = min(max(beds_value or beds_min, beds_min), beds_max)
+
+    if beds_value == beds_new_value : 
+        beds_new_value = no_update
 
     bathrooms_max = accommodates
-    bathrooms_value = min(bathrooms_max, bathrooms_value)
+    bathrooms_new_value = min(bathrooms_max, bathrooms_value)
+
+    if bathrooms_value == bathrooms_new_value : 
+        bathrooms_new_value = no_update
 
     bedrooms_max = accommodates
-    bedrooms_value = min(bedrooms_max, bedrooms_value)
+    bedrooms_new_value = min(bedrooms_max, bedrooms_value)
 
-    return beds_value, bathrooms_value, bedrooms_value
+    if bedrooms_new_value == bedrooms_value :
+        bedrooms_new_value = no_update
+
+    return beds_new_value, bathrooms_new_value, bedrooms_new_value
 
 @app.callback(
     Output("p-accommodates-input", "value", allow_duplicate=True),
@@ -870,12 +888,18 @@ def cascade_on_price_beds(beds, accommodates_value, bedrooms) :
 
     acc_max = beds*2
     acc_min = beds
-    accommodates_value = min(max(accommodates_value, acc_min), acc_max)
+    accommodates_new_value = min(max(accommodates_value, acc_min), acc_max)
+
+    if accommodates_new_value == accommodates_value :
+        accommodates_new_value = no_update
 
     bedrooms_max = beds 
-    bedrooms = min(bedrooms, bedrooms_max)
+    bedrooms_new = min(bedrooms, bedrooms_max)
 
-    return accommodates_value, bedrooms
+    if bedrooms_new == bedrooms :
+        bedrooms_new = no_update
+
+    return accommodates_new_value, bedrooms_new
 
 @app.callback(
     Output("r-accommodates-input", "value", allow_duplicate=True),
@@ -891,12 +915,18 @@ def cascade_on_rating_beds(beds, accommodates_value, bedrooms) :
 
     acc_max = beds*2
     acc_min = beds
-    accommodates_value = min(max(accommodates_value, acc_min), acc_max)
+    accommodates_new_value = min(max(accommodates_value, acc_min), acc_max)
+
+    if accommodates_new_value == accommodates_value :
+        accommodates_new_value = no_update
 
     bedrooms_max = beds 
-    bedrooms = min(bedrooms, bedrooms_max)
+    bedrooms_new = min(bedrooms, bedrooms_max)
 
-    return accommodates_value, bedrooms 
+    if bedrooms_new == bedrooms :
+        bedrooms_new = no_update
+
+    return accommodates_new_value, bedrooms_new
 
 @app.callback(
     Output("p-accommodates-input", "value", allow_duplicate=True),
@@ -911,12 +941,18 @@ def cascade_on_price_bedrooms(bedrooms, accommodates_value, beds) :
         raise PreventUpdate
 
     acc_min = bedrooms
-    accommodates_value = max(accommodates_value, acc_min)
+    accommodates_new_value = max(accommodates_value, acc_min)
+
+    if accommodates_new_value == accommodates_value : 
+        accommodates_new_value = no_update
 
     beds_min = bedrooms 
-    beds = max(beds_min, beds)
+    beds_new = max(beds_min, beds)
 
-    return accommodates_value, beds
+    if beds_new == beds :
+        beds_new = no_update
+
+    return accommodates_new_value, beds_new
 
 @app.callback(
     Output("r-accommodates-input", "value", allow_duplicate=True),
@@ -931,12 +967,18 @@ def cascade_on_rating_bedrooms(bedrooms, accommodates_value, beds) :
         raise PreventUpdate
 
     acc_min = bedrooms
-    accommodates_value = max(accommodates_value, acc_min)
+    accommodates_new_value = max(accommodates_value, acc_min)
+
+    if accommodates_new_value == accommodates_value : 
+        accommodates_new_value = no_update
 
     beds_min = bedrooms 
-    beds = max(beds_min, beds)
+    beds_new = max(beds_min, beds)
 
-    return accommodates_value, beds
+    if beds_new == beds :
+        beds_new = no_update
+
+    return accommodates_new_value, beds_new
 
 @app.callback(
     Output("p-accommodates-input", "value", allow_duplicate=True),
@@ -949,9 +991,12 @@ def cascade_on_price_bathrooms(bathrooms, accommodates_value) :
         raise PreventUpdate
 
     acc_min = math.ceil(bathrooms)
-    accommodates_value = max(accommodates_value, acc_min)
+    accommodates_new_value = max(accommodates_value, acc_min)
 
-    return accommodates_value
+    if accommodates_new_value == accommodates_value :
+        accommodates_new_value = no_update
+
+    return accommodates_new_value
 
 @app.callback(
     Output("r-accommodates-input", "value", allow_duplicate=True),
@@ -964,9 +1009,12 @@ def cascade_on_rating_bathrooms(bathrooms, accommodates_value) :
         raise PreventUpdate
 
     acc_min = math.ceil(bathrooms)
-    accommodates_value = max(accommodates_value, acc_min)
+    accommodates_new_value = max(accommodates_value, acc_min)
 
-    return accommodates_value
+    if accommodates_new_value == accommodates_value :
+        accommodates_new_value = no_update
+
+    return accommodates_new_value
 
 @app.callback(
     [
