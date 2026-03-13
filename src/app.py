@@ -32,6 +32,10 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
+try:
+    from xgboost import XGBRegressor
+except ImportError:
+    XGBRegressor = None
 
 CSV_PATH = "data/raw/listings.csv" 
 avg_rating = 0
@@ -109,21 +113,48 @@ preprocess_rating = ColumnTransformer(
     remainder="drop"
 )
 
-def _make_model():
+def _make_rf_model():
     return RandomForestRegressor(
         n_estimators=300,
         random_state=42,
         n_jobs=-1
     )
 
+
+def _make_price_model():
+    if XGBRegressor is None:
+        print("[ML] Price model backend: RandomForestRegressor (fallback: xgboost not installed)")
+        return _make_rf_model()
+
+    try:
+        print("[ML] Price model backend: XGBRegressor")
+        return XGBRegressor(
+            objective="reg:squarederror",
+            n_estimators=800,
+            learning_rate=0.05,
+            max_depth=6,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            random_state=42,
+            n_jobs=-1,
+            verbosity=0,
+        )
+    except Exception as exc:
+        print(f"[ML] Price model backend: RandomForestRegressor (fallback after xgboost init error: {exc})")
+        return _make_rf_model()
+
+
+def _make_rate_model():
+    return _make_rf_model()
+
 price_pipeline = Pipeline(steps=[
     ("preprocess", preprocess_price),
-    ("model", _make_model())
+    ("model", _make_price_model())
 ])
 
 rate_pipeline = Pipeline(steps=[
     ("preprocess", preprocess_rating),
-    ("model", _make_model())
+    ("model", _make_rate_model())
 ])
 
 df = pd.read_csv(CSV_PATH)
