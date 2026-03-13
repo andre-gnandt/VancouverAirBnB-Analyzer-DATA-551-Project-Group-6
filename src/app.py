@@ -1,3 +1,29 @@
+from __future__ import annotations
+
+import os
+import copy
+import numpy as np
+
+import altair as alt
+import dash
+import dash_bootstrap_components as dbc
+import dash_core_components as dcc
+import dash_html_components as html
+import pandas as pd
+import plotly.express as px
+
+from dash import dash_table
+from dash.dependencies import Input, Output, State
+from dash.exceptions import PreventUpdate
+from pathlib import Path
+
+# For deploy: replace ml_nn with src.ml_nn
+from ml_nn import (
+    COMMON_CATEGORICAL,
+    COMMON_NUMERIC,
+    load_dataset,
+)
+
 import dash
 import altair as alt
 import pandas as pd
@@ -8,8 +34,33 @@ import dash_core_components as dcc
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 
-price_predictors = {"accommodates": 2, "bedrooms": 1, "bathrooms": 1, "cleanliness": 3, 
-"neighborhood": "Arbutus Ridge", "property type": "Boat", "location": "N/A", "rating": "N/A" }
+price_predictors = {
+    "accommodates": 2,
+    "bedrooms": 1,
+    "bathrooms": 1,
+    "cleanliness": 3,
+    "neighborhood": "Arbutus Ridge",
+    "property type": "Boat",
+    "location": "N/A",
+    "rating": "N/A",
+}
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+CSV_PATH = BASE_DIR / "data" / "raw" / "listings.csv"
+avg_rating = 0
+avg_location = 0
+avg_price = 0
+
+rating_predictors = {
+    "accommodates": 2,
+    "bedrooms": 1,
+    "bathrooms": 1,
+    "cleanliness": 3,
+    "neighborhood": "Arbutus Ridge",
+    "property type": "Boat",
+    "location": "N/A",
+    "price": 100,
+}
 
 rating_predictors = {"accommodates": 2, "bedrooms": 1, "bathrooms": 1, "cleanliness": 3, 
 "neighborhood": "Arbutus Ridge", "property type": "Boat", "location": "N/A", "price":100 }
@@ -71,6 +122,111 @@ def standardize_rating_predictor(predictors, key) :
         predictors[key] = (predictors[key]-rating_predictor_means[key])/rating_predictor_sds[key]
 
 app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
+def _build_rq1_rankings(
+    df: pd.DataFrame,
+    price_range: list[float],
+    min_guests: int,
+    min_rating: float,
+    room_types: list[str] | None,
+    top_n: int,
+) -> pd.DataFrame:
+    filtered = df[
+        (df["price_num"] >= float(price_range[0]))
+        & (df["price_num"] <= float(price_range[1]))
+        & (df["accommodates"] >= float(min_guests))
+        & (df["review_scores_rating"].fillna(0) >= float(min_rating))
+    ].copy()
+
+    if room_types:
+        filtered = filtered[filtered["room_type"].astype(str).isin(room_types)]
+
+    if filtered.empty:
+        return filtered
+
+    filtered["rating_norm"] = _normalize(filtered["review_scores_rating"])
+    filtered["price_norm"] = _normalize(filtered["price_num"], invert=True)
+    filtered["reviews_norm"] = _normalize(filtered["number_of_reviews"])
+
+    filtered["tourist_score"] = (
+        0.50 * filtered["rating_norm"]
+        + 0.30 * filtered["price_norm"]
+        + 0.20 * filtered["reviews_norm"]
+    )
+
+    return filtered.sort_values("tourist_score", ascending=False).head(int(top_n))
+
+
+def _label_value_options(values: list[str]) -> list[dict[str, str]]:
+    return [{"label": value, "value": value} for value in values]
+
+
+def _build_map_figure(frame: pd.DataFrame):
+    if frame.empty:
+        fig = px.scatter_mapbox(
+            pd.DataFrame({"latitude": [], "longitude": []}),
+            lat="latitude",
+            lon="longitude",
+            zoom=10,
+            height=360,
+        )
+        fig.update_layout(
+            mapbox_style="open-street-map",
+            margin={"l": 0, "r": 0, "t": 0, "b": 0},
+            annotations=[
+                {
+                    "text": "No listings match these filters.",
+                    "xref": "paper",
+                    "yref": "paper",
+                    "x": 0.5,
+                    "y": 0.5,
+                    "showarrow": False,
+                }
+            ],
+        )
+        return fig
+
+    fig = px.scatter_mapbox(
+        frame,
+        lat="latitude",
+        lon="longitude",
+        color="tourist_score",
+        size="accommodates",
+        hover_name="name",
+        labels = {"tourist_score": "Tourist Score", "price_num" : "Price Per Night", "review_scores_rating":"Rating", 
+        "neighbourhood_cleansed":"Neighborhood", "accommodates": "Max Guests"},
+        hover_data={"price_num": "$:.2f", "review_scores_rating": ":.2f", "neighbourhood_cleansed": True, "latitude": False,
+        "longitude": False},
+        zoom=10,
+        height=360,
+    )
+    fig.update_layout(mapbox_style="open-street-map", margin={"l": 0, "r": 0, "t": 0, "b": 0})
+    return fig
+
+DATAFRAME = load_dataset()
+DEFAULTS = _make_default_input_values(DATAFRAME)
+
+ROOM_TYPES = sorted(DATAFRAME["room_type"].dropna().astype(str).unique().tolist())
+NEIGHBOURHOODS = sorted(DATAFRAME["neighbourhood_cleansed"].dropna().astype(str).unique().tolist())
+
+PRICE_MIN = int(np.nanpercentile(DATAFRAME["price_num"], 5))
+PRICE_MAX = int(np.nanpercentile(DATAFRAME["price_num"], 95))
+
+panel_style = {
+    "width": "90%",
+    "display": "inline-block",
+    "verticalAlign": "top",
+    "padding": "12px",
+    "border": "1px solid #d2d9e5",
+    "borderRadius": "12px",
+    "backgroundColor": "#f8fbff",
+    "minHeight": "980px",
+}
+
+info_style = {"backgroundColor": "#edf5ff", "padding": "8px", "borderRadius": "8px"}
+
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+server = app.server
+app.title = "Vancouver Airbnb Analyzer"
 app.layout = dbc.Container([
     dbc.Tabs([
         dbc.Tab([
@@ -379,10 +535,98 @@ app.layout = dbc.Container([
                     ]),
                 ], style={'width': '60%', 'padding': '20px'})
             ], style={'display': 'flex', 'flexDirection': 'row'}),
-        ], label = 'Rating Estimator', style = {'height': '100%'}),
-        dbc.Tab('tourist matches', label = 'Tourist Listings')    
+        ], label = 'Rating Estimator', style = {'height': '100%'}),    
+        dbc.Tab([
+            html.Div(
+            [
+                html.Div(
+                    [
+                        html.H3("Tourist Listing Finder"),
+                        html.Label("Price Range (CAD/night)"),
+                        dcc.RangeSlider(
+                            id="rq1-price-range",
+                            min=PRICE_MIN,
+                            max=PRICE_MAX,
+                            step=5,
+                            value=[PRICE_MIN, PRICE_MAX],
+                            tooltip={"placement": "bottom"},
+                            allow_direct_input=False,
+                        ),
+                        html.Label("Accommodates", style={"marginTop": "10px"}),
+                        dcc.Input(
+                            id='rq1-min-guests',
+                            type='number',
+                            min=1,          
+                            step=1,     
+                            placeholder="2....",
+                            value = 2,
+                            required = True,
+            
+                        ),
+                        html.Label("Minimum Acceptable Rating (1-5)", style={"marginTop": "10px"}),
+                        dcc.Input(
+                            id='rq1-min-rating',
+                            type='number',
+                            min=1,          
+                            step=0.01,     
+                            max = 5,
+                            placeholder="4.5/5",
+                            value = round(avg_rating, 2),
+                            required = True,
+                            
+                        ),
+                        html.Label("Room Type(s)", style={"marginTop": "10px"}),
+                        dcc.Dropdown(
+                            id="rq1-room-types",
+                            options=_label_value_options(ROOM_TYPES),
+                            value=ROOM_TYPES,
+                            multi=True,
+                        ),
+                        html.Label("Show the best N options", style={"marginTop": "10px"}),
+                        dcc.Slider(id="rq1-top-n", min=5, max=30, step=1, value=10),
+                        dcc.Graph(
+                            id="rq1-map",
+                            style={
+                                "marginTop": "12px",
+                                "marginBottom": "12px",
+                                "height": "520px",
+                                "width": "100%"
+                           },
+                           config={"responsive": True}
+                        ),
+                        dash_table.DataTable(
+                            id="rq1-table",
+                            columns=[
+                                {"name": "Name", "id": "name"},
+                                {"name": "Neighbourhood", "id": "neighbourhood_cleansed"},
+                                {"name": "Room Type", "id": "room_type"},
+                                {"name": "Price", "id": "price_display"},
+                                {"name": "Rating", "id": "rating_display"},
+                                {"name": "Tourist Score", "id": "score_display"},
+                            ],
+                            page_size=8,
+                            style_cell={
+                                "textAlign": "left",
+                                "fontSize": "12px",
+                                "padding": "8px",
+                                "minWidth": "90px",
+                                "width": "90px",
+                                "maxWidth": "240px"
+                            },
+                            style_table={
+                                "width": "100%",
+                                "overflowX": "auto",
+                                "marginTop": "10px"
+                            },
+                        ),
+                    ],
+                    style=panel_style,
+                ),
+            ]
+            ),
+        ], label = 'Tourist Listings')    
     ])
-], style = {'height': '100vh'})
+], fluid=True, style={'height': '100vh', 'paddingLeft': '20px', 'paddingRight': '20px'})
 
 @app.callback(
     Input("p-cleanliness-input", 'value')
