@@ -364,7 +364,7 @@ panel_style = {
 
 info_style = {"backgroundColor": "#edf5ff", "padding": "8px", "borderRadius": "8px"}
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], title = 'Vancouver Airbnb Analyzer')
 server = app.server
 app.title = "Vancouver Airbnb Analyzer"
 app.layout = dbc.Container([
