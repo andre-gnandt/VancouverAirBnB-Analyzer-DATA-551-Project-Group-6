@@ -5,12 +5,11 @@ import os
 import plotly.express as px
 from dash import html
 
+#For deploy: replace ml_nn with src.ml_nn
 from ml_nn import (
     COMMON_CATEGORICAL,
     COMMON_NUMERIC,
     load_dataset,
-    load_or_train_models,
-    predict_one,
 )
 
 import dash
@@ -347,10 +346,6 @@ NEIGHBOURHOODS = sorted(DATAFRAME["neighbourhood_cleansed"].dropna().astype(str)
 PRICE_MIN = int(np.nanpercentile(DATAFRAME["price_num"], 5))
 PRICE_MAX = int(np.nanpercentile(DATAFRAME["price_num"], 95))
 
-app = dash.Dash(__name__)
-server = app.server
-app.title = "Vancouver Airbnb Analyzer (Rudimentary NN)"
-
 panel_style = {
     "width": "90%",
     "display": "inline-block",
@@ -364,9 +359,9 @@ panel_style = {
 
 info_style = {"backgroundColor": "#edf5ff", "padding": "8px", "borderRadius": "8px"}
 
-
-app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
+app.title = "Vancouver Airbnb Analyzer"
 app.layout = dbc.Container([
     html.H1("Vancouver Airbnb Analyzer"),
     dbc.Tabs([
@@ -991,4 +986,4 @@ def calculate_rating(nclicks, is_open) :
     return str(pred)+"/5", False
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False, host="0.0.0.0", port=8080)
