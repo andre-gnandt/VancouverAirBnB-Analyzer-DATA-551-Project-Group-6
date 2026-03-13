@@ -492,7 +492,7 @@ app.layout = dbc.Container([
                             min=1,          
                             step=1,         
                             placeholder="1, 2, 3...",
-                            value = 1,
+                            value = 2,
                             required = True,
                             style={'width': '250px'}
                         ),
@@ -505,7 +505,7 @@ app.layout = dbc.Container([
                             min=1,          
                             step=1,         
                             placeholder="1, 2, 3...",
-                            value = 1,
+                            value = 2,
                             required = True,
                             style={'width': '250px'}
                         ),
@@ -518,7 +518,7 @@ app.layout = dbc.Container([
                             min=0.5,          
                             step=0.5,         
                             placeholder="0.5, 1, 1.5, 2, 2.5...",
-                            value = 1,
+                            value = 2,
                             required = True,
                             style={'width': '250px'}
                         ),
@@ -679,7 +679,7 @@ app.layout = dbc.Container([
                             min=1,          
                             step=1,         
                             placeholder="1, 2, 3...",
-                            value = 1,
+                            value = 2,
                             required = True,
                             style={'width': '250px'}
                         ),
@@ -692,7 +692,7 @@ app.layout = dbc.Container([
                             min=1,          
                             step=1,         
                             placeholder="1, 2, 3...",
-                            value = 1,
+                            value = 2,
                             required = True,
                             style={'width': '250px'}
                         ),
@@ -705,7 +705,7 @@ app.layout = dbc.Container([
                             min=0.5,          
                             step=0.5,         
                             placeholder="0.5, 1, 1.5, 2, 2.5...",
-                            value = 1,
+                            value = 2,
                             required = True,
                             style={'width': '250px'}
                         ),
