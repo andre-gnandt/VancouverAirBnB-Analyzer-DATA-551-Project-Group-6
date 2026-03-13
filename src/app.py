@@ -334,7 +334,7 @@ def _build_map_figure(frame: pd.DataFrame):
         hover_name="name",
         labels = {"tourist_score": "Score", "price_num" : "Price Per Night", "review_scores_rating":"Rating", 
         "neighbourhood_cleansed":"Neighborhood", "accommodates": "Max Guests"},
-        hover_data={"price_num": "$:.2f", "review_scores_rating": ":.2f", "neighbourhood_cleansed": True, "latitude": False,
+        hover_data={"price_num": ":.2f", "review_scores_rating": ":.2f", "neighbourhood_cleansed": True, "latitude": False,
         "longitude": False},
         zoom=10,
         height=360,
