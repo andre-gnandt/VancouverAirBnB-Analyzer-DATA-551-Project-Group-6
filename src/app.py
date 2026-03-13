@@ -24,6 +24,7 @@ import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 import pandas as pd
 import numpy as np
+import math
 from sklearn.inspection import permutation_importance
 from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
@@ -65,7 +66,7 @@ categorical_cols_price = [
 numeric_cols_price = [
     "accommodates", "bedrooms", "beds", "bathrooms", 
      "review_scores_location", "review_scores_rating"
-    , "host_response_rate", "review_scores_communication", 
+    #, "host_response_rate", "review_scores_communication", 
 ]
 
 FEATURE_COLS_PRICE = numeric_cols_price + categorical_cols_price
@@ -164,8 +165,9 @@ def predict_rate(input_dict: dict) -> float:
 permutated_importances = permutation_importance(price_pipeline, Xp_test, yp_test, n_repeats=10, random_state=42)
 sorted_importances_idx = permutated_importances.importances_mean.argsort()
 sorted_importances = permutated_importances.importances_mean[sorted_importances_idx]
-XpR = Xp_test.rename(columns = {'neighbourhood_cleansed': 'neighborhood', 'property_type':'property type',  'review_scores_rating': 'rating',
-'review_scores_location': 'location rating', 'review_scores_communication':'communication', 'host_response_rate': 'response rate'})
+XpR = Xp_test.rename(columns = {'accommodates': 'max guests' ,'neighbourhood_cleansed': 'neighborhood', 'property_type':'property type',  'review_scores_rating': 'rating',
+'review_scores_location': 'location rating' #, 'review_scores_communication':'communication', 'host_response_rate': 'response rate'
+})
 sorted_feature_names = XpR.columns[sorted_importances_idx]
 
 percentages = []
@@ -185,7 +187,7 @@ price_predictors_importance_df = pd.DataFrame({'Listing Feature': sorted_feature
 permutated_importances = permutation_importance(rate_pipeline, Xr_test, yr_test, n_repeats=10, random_state=42)
 sorted_importances_idx = permutated_importances.importances_mean.argsort()
 sorted_importances = permutated_importances.importances_mean[sorted_importances_idx]
-sorted_feature_names = Xr_test.rename(columns = {'review_scores_cleanliness': 'cleanliness', 'neighbourhood_cleansed': 'neighborhood', 'property_type':'property type', 
+sorted_feature_names = Xr_test.rename(columns = {'accommodates': 'max guests' ,'review_scores_cleanliness': 'cleanliness', 'neighbourhood_cleansed': 'neighborhood', 'property_type':'property type', 
 'review_scores_location': 'location rating', 'review_scores_communication':'communication', 'host_response_rate': 'response rate'}).columns[sorted_importances_idx]
 
 percentages = []
@@ -202,7 +204,7 @@ for val in sorted_importances :
 
 rating_predictors_importance_df = pd.DataFrame({'Listing Feature': sorted_feature_names, 'Influence %': percentages}).sort_values(by='Influence %', ascending=False)
 
-price_predictors = {"accommodates": 2, "bedrooms": 1, "beds":1, "bathrooms": 1, "host_response_rate":100, "review_scores_communication" : 3,
+price_predictors = {"accommodates": 2, "bedrooms": 1, "beds":1, "bathrooms": 1, #"host_response_rate":100, "review_scores_communication" : 3,
 "neighbourhood_cleansed": "Arbutus Ridge", "property_type": "Boat", "review_scores_location": avg_location, "review_scores_rating": avg_rating }
 
 rating_predictors = {"review_scores_cleanliness": 3, "price": avg_price, "accommodates": 2, "bedrooms": 1, "beds":1, "bathrooms": 1, "host_response_rate":100, "review_scores_communication" : 3,
@@ -330,7 +332,10 @@ def _build_map_figure(frame: pd.DataFrame):
         color="tourist_score",
         size="accommodates",
         hover_name="name",
-        hover_data={"price_num": ":.0f", "review_scores_rating": ":.2f", "neighbourhood_cleansed": True},
+        labels = {"tourist_score": "Score", "price_num" : "Price Per Night", "review_scores_rating":"Rating", 
+        "neighbourhood_cleansed":"Neighborhood", "accommodates": "Max Guests"},
+        hover_data={"price_num": "$:.2f", "review_scores_rating": ":.2f", "neighbourhood_cleansed": True, "latitude": False,
+        "longitude": False},
         zoom=10,
         height=360,
     )
@@ -419,33 +424,33 @@ app.layout = dbc.Container([
                             style={'width': '250px'}
                         ),
                     ], style={'display': 'flex', 'alignItems': 'center', 'margin-bottom': '10px'}), 
-                    html.Div([
-                        html.Label('Host Communication:', style={'width': '120px', 'margin-right': '10px'}),
-                        dcc.Dropdown(
-                            id='p-communication-input',
-                            options=['Excellent', 'Good', 'Average', 'Below Average', 'Poor'],
-                            value='Average',
-                            clearable = False,
-                            style={'width': '250px'}
-                        ),
-                    ], style={'display': 'flex', 'alignItems': 'center', 'margin-bottom': '10px'}),
-                    html.Div([
-                        html.Label('Host Response Rate:', style={'width': '150px', 'margin-right': '10px'}),
-                        dcc.Slider(
-                            id='p-response-rate-input',
-                            min = 0,
-                            max = 100,
-                            step = 5,
-                            value=100,
-                            marks = {
-                                0: '0%',
-                                25: '25%',
-                                50: '50%',
-                                75: '75%',
-                                100: '100%'
-                            }
-                        ),
-                    ], style={'width': '400px', 'display': 'flex', 'alignItems': 'center', 'margin-bottom': '10px'}),
+                    # html.Div([
+                    #     html.Label('Host Communication:', style={'width': '120px', 'margin-right': '10px'}),
+                    #     dcc.Dropdown(
+                    #         id='p-communication-input',
+                    #         options=['Excellent', 'Good', 'Average', 'Below Average', 'Poor'],
+                    #         value='Average',
+                    #         clearable = False,
+                    #         style={'width': '250px'}
+                    #     ),
+                    # ], style={'display': 'flex', 'alignItems': 'center', 'margin-bottom': '10px'}),
+                    #html.Div([
+                        #html.Label('Host Response Rate:', style={'width': '150px', 'margin-right': '10px'}),
+                        #dcc.Slider(
+                            #id='p-response-rate-input',
+                            #min = 0,
+                            #max = 100,
+                            #step = 5,
+                            #value=100,
+                            #marks = {
+                                #0: '0%',
+                                # 25: '25%',
+                                # 50: '50%',
+                                # 75: '75%',
+                                # 100: '100%'
+                    #         }
+                    #     ),
+                    # ], style={'width': '400px', 'display': 'flex', 'alignItems': 'center', 'margin-bottom': '10px'}),
                     html.Div([
                         html.Label('Location Rating:', style={'width': '120px', 'margin-right': '10px'}),
                         dcc.Dropdown(
@@ -467,7 +472,7 @@ app.layout = dbc.Container([
                         ),
                     ], style={'display': 'flex', 'alignItems': 'center', 'margin-bottom': '10px'}),
                     html.Div([
-                        html.Label('Accommodates:', style={'width': '120px', 'margin-right': '10px'}),
+                        html.Label('Max Guests:', style={'width': '120px', 'margin-right': '10px'}),
                         dcc.Input(
                             id='p-accommodates-input',
                             type='number',
@@ -654,7 +659,7 @@ app.layout = dbc.Container([
                         ),
                     ], style={'display': 'flex', 'alignItems': 'center', 'margin-bottom': '10px'}),
                     html.Div([
-                        html.Label('Accommodates:', style={'width': '120px', 'margin-right': '10px'}),
+                        html.Label('Max Guests:', style={'width': '120px', 'margin-right': '10px'}),
                         dcc.Input(
                             id='r-accommodates-input',
                             type='number',
@@ -732,7 +737,7 @@ app.layout = dbc.Container([
             [
                 html.Div(
                     [
-                        html.H3("RQ1: Tourist Listing Finder"),
+                        html.H3("Tourist Listing Finder"),
                         html.Label("Price Range (CAD/night)"),
                         dcc.RangeSlider(
                             id="rq1-price-range",
@@ -741,11 +746,31 @@ app.layout = dbc.Container([
                             step=5,
                             value=[PRICE_MIN, PRICE_MAX],
                             tooltip={"placement": "bottom"},
+                            allow_direct_input=False,
                         ),
                         html.Label("Minimum Guests", style={"marginTop": "10px"}),
-                        dcc.Slider(id="rq1-min-guests", min=1, max=16, step=1, value=2),
-                        html.Label("Minimum Rating", style={"marginTop": "10px"}),
-                        dcc.Slider(id="rq1-min-rating", min=3.0, max=5.0, step=0.1, value=4.5),
+                        dcc.Input(
+                            id='rq1-min-guests',
+                            type='number',
+                            min=1,          
+                            step=1,     
+                            placeholder="2....",
+                            value = 2,
+                            required = True,
+            
+                        ),
+                        html.Label("Minimum Rating (1-5)", style={"marginTop": "10px"}),
+                        dcc.Input(
+                            id='rq1-min-rating',
+                            type='number',
+                            min=1,          
+                            step=0.01,     
+                            max = 5,
+                            placeholder="4.5/5",
+                            value = round(avg_rating, 2),
+                            required = True,
+                            
+                        ),
                         html.Label("Room Type(s)", style={"marginTop": "10px"}),
                         dcc.Dropdown(
                             id="rq1-room-types",
@@ -753,7 +778,7 @@ app.layout = dbc.Container([
                             value=ROOM_TYPES,
                             multi=True,
                         ),
-                        html.Label("Top N", style={"marginTop": "10px"}),
+                        html.Label("Display N amount of matches:", style={"marginTop": "10px"}),
                         dcc.Slider(id="rq1-top-n", min=5, max=30, step=1, value=10),
                         dcc.Graph(id="rq1-map", style={"marginTop": "10px"}),
                         dash_table.DataTable(
@@ -780,6 +805,170 @@ app.layout = dbc.Container([
 ], style = {'height': '100vh'})
 
 @app.callback(
+    Output("p-beds-input", "value", allow_duplicate=True),
+    Output("p-bathrooms-input", "value"),
+    Output("p-bedrooms-input", "value", allow_duplicate=True),
+    Input("p-accommodates-input", "value"),
+    State("p-beds-input", "value"),
+    State("p-bathrooms-input", "value"),
+    State("p-bedrooms-input", "value"),
+    prevent_initial_call=True
+)
+def cascade_on_price_accommodates(accommodates, beds_value, bathrooms_value, bedrooms_value) :
+    if accommodates is None:
+        raise PreventUpdate
+
+    beds_min = math.ceil(accommodates / 2)
+    beds_max = accommodates
+    beds_value = min(max(beds_value or beds_min, beds_min), beds_max)
+
+    bathrooms_max = accommodates
+    bathrooms_value = min(bathrooms_max, bathrooms_value)
+
+    bedrooms_max = accommodates
+    bedrooms_value = min(bedrooms_max, bedrooms_value)
+
+    return beds_value, bathrooms_value, bedrooms_value
+
+@app.callback( 
+    Output("r-beds-input", "value", allow_duplicate=True),
+    Output("r-bathrooms-input", "value"),
+    Output("r-bedrooms-input", "value", allow_duplicate=True),
+    Input("r-accommodates-input", "value"),
+    State("r-beds-input", "value"),
+    State("r-bathrooms-input", "value"),
+    State("r-bedrooms-input", "value"),
+    prevent_initial_call=True
+)
+def cascade_on_rating_accommodates(accommodates, beds_value, bathrooms_value, bedrooms_value) :
+    if accommodates is None:
+        raise PreventUpdate
+
+    beds_min = math.ceil(accommodates / 2)
+    beds_max = accommodates
+    beds_value = min(max(beds_value or beds_min, beds_min), beds_max)
+
+    bathrooms_max = accommodates
+    bathrooms_value = min(bathrooms_max, bathrooms_value)
+
+    bedrooms_max = accommodates
+    bedrooms_value = min(bedrooms_max, bedrooms_value)
+
+    return beds_value, bathrooms_value, bedrooms_value
+
+@app.callback(
+    Output("p-accommodates-input", "value", allow_duplicate=True),
+    Output("p-bedrooms-input", "value", allow_duplicate=True),
+    Input("p-beds-input", "value"),
+    State("p-accommodates-input", "value"),
+    State("p-bedrooms-input", "value"),
+    prevent_initial_call=True
+)
+def cascade_on_price_beds(beds, accommodates_value, bedrooms) :
+    if beds is None:
+        raise PreventUpdate
+
+    acc_max = beds*2
+    acc_min = beds
+    accommodates_value = min(max(accommodates_value, acc_min), acc_max)
+
+    bedrooms_max = beds 
+    bedrooms = min(bedrooms, bedrooms_max)
+
+    return accommodates_value, bedrooms
+
+@app.callback(
+    Output("r-accommodates-input", "value", allow_duplicate=True),
+    Output("r-bedrooms-input", "value", allow_duplicate=True),
+    Input("r-beds-input", "value"),
+    State("r-accommodates-input", "value"),
+    State("r-bedrooms-input", "value"),
+    prevent_initial_call=True
+)
+def cascade_on_rating_beds(beds, accommodates_value, bedrooms) :
+    if beds is None:
+        raise PreventUpdate
+
+    acc_max = beds*2
+    acc_min = beds
+    accommodates_value = min(max(accommodates_value, acc_min), acc_max)
+
+    bedrooms_max = beds 
+    bedrooms = min(bedrooms, bedrooms_max)
+
+    return accommodates_value, bedrooms 
+
+@app.callback(
+    Output("p-accommodates-input", "value", allow_duplicate=True),
+    Output("p-beds-input", "value", allow_duplicate=True),
+    Input("p-bedrooms-input", "value"),
+    State("p-accommodates-input", "value"),
+    State("p-beds-input", "value"),
+    prevent_initial_call=True
+)
+def cascade_on_price_bedrooms(bedrooms, accommodates_value, beds) :
+    if bedrooms is None:
+        raise PreventUpdate
+
+    acc_min = bedrooms
+    accommodates_value = max(accommodates_value, acc_min)
+
+    beds_min = bedrooms 
+    beds = max(beds_min, beds)
+
+    return accommodates_value, beds
+
+@app.callback(
+    Output("r-accommodates-input", "value", allow_duplicate=True),
+    Output("r-beds-input", "value", allow_duplicate=True),
+    Input("r-bedrooms-input", "value"),
+    State("r-accommodates-input", "value"),
+    State("r-beds-input", "value"),
+    prevent_initial_call=True
+)
+def cascade_on_rating_bedrooms(bedrooms, accommodates_value, beds) :
+    if bedrooms is None:
+        raise PreventUpdate
+
+    acc_min = bedrooms
+    accommodates_value = max(accommodates_value, acc_min)
+
+    beds_min = bedrooms 
+    beds = max(beds_min, beds)
+
+    return accommodates_value, beds
+
+@app.callback(
+    Output("p-accommodates-input", "value", allow_duplicate=True),
+    Input("p-bathrooms-input", "value"),
+    State("p-accommodates-input", "value"),
+    prevent_initial_call=True
+)
+def cascade_on_price_bathrooms(bathrooms, accommodates_value) :
+    if bathrooms is None:
+        raise PreventUpdate
+
+    acc_min = math.ceil(bathrooms)
+    accommodates_value = max(accommodates_value, acc_min)
+
+    return accommodates_value
+
+@app.callback(
+    Output("r-accommodates-input", "value", allow_duplicate=True),
+    Input("r-bathrooms-input", "value"),
+    State("r-accommodates-input", "value"),
+    prevent_initial_call=True
+)
+def cascade_on_rating_bathrooms(bathrooms, accommodates_value) :
+    if bathrooms is None:
+        raise PreventUpdate
+
+    acc_min = math.ceil(bathrooms)
+    accommodates_value = max(accommodates_value, acc_min)
+
+    return accommodates_value
+
+@app.callback(
     [
         Input("p-neighborhood-input", 'value'),
         Input("p-property-type-input", 'value'),
@@ -789,8 +978,8 @@ app.layout = dbc.Container([
         Input("p-accommodates-input", 'value'),
         Input("p-rating-input", 'value'),
         Input("p-location-input", 'value'),
-        Input("p-response-rate-input", 'value'),
-        Input("p-communication-input", 'value')
+        #Input("p-response-rate-input", 'value'),
+        #Input("p-communication-input", 'value')
     ]
 )
 def set_price_predictors(
@@ -802,8 +991,8 @@ def set_price_predictors(
     accommodates,
     rating,
     location,
-    responseRate,
-    communication
+    #responseRate,
+    #communication
                         ) :
     price_predictors['neighbourhood_cleansed'] = neighborhood
     price_predictors['property_type'] = property_
@@ -822,18 +1011,18 @@ def set_price_predictors(
     else:
         price_predictors['review_scores_location'] = location
     
-    price_predictors['host_response_rate'] = responseRate
+    #price_predictors['host_response_rate'] = responseRate
     
-    if communication == "Poor" : 
-        price_predictors['review_scores_communication'] = 1
-    elif communication == "Below Average" : 
-        price_predictors['review_scores_communication'] = 2
-    elif communication == "Average" : 
-        price_predictors['review_scores_communication'] = 3
-    elif communication == "Good" : 
-        price_predictors['review_scores_communication'] = 4
-    elif communication == "Excellent" : 
-        price_predictors['review_scores_communication'] = 5
+    #if communication == "Poor" : 
+        #price_predictors['review_scores_communication'] = 1
+    #elif communication == "Below Average" : 
+        #price_predictors['review_scores_communication'] = 2
+    #elif communication == "Average" : 
+        #price_predictors['review_scores_communication'] = 3
+    #elif communication == "Good" : 
+        #price_predictors['review_scores_communication'] = 4
+    #elif communication == "Excellent" : 
+        #price_predictors['review_scores_communication'] = 5
 
 @app.callback(
     [
@@ -902,7 +1091,8 @@ def set_rating_predictors(
 
 
 @app.callback(
-    [Output("rq1-map", "figure"), Output("rq1-table", "data")],
+    [Output("rq1-map", "figure"), Output("rq1-table", "data"),
+    Output("rq1-price-range", "min"), Output("rq1-price-range", "max")],
     [
         Input("rq1-price-range", "value"),
         Input("rq1-min-guests", "value"),
@@ -924,8 +1114,11 @@ def update_rq1(price_range, min_guests, min_rating, room_types, top_n):
     fig = _build_map_figure(ranked)
 
     if ranked.empty:
-        return fig, []
+        return fig, [], 0, 0
 
+    price_max = ranked['price_num'].max()
+    price_min = ranked['price_num'].min()
+    
     table = ranked[
         [
             "name",
@@ -939,7 +1132,7 @@ def update_rq1(price_range, min_guests, min_rating, room_types, top_n):
     table["price_display"] = table["price_num"].map(lambda x: f"${x:,.0f}")
     table["rating_display"] = table["review_scores_rating"].map(lambda x: f"{x:.2f}")
     table["score_display"] = table["tourist_score"].map(lambda x: f"{x:.3f}")
-    return fig, table.to_dict("records")
+    return fig, table.to_dict("records"), price_min, price_max
 
 @app.callback(
     [Output('price', 'children'),
@@ -986,4 +1179,5 @@ def calculate_rating(nclicks, is_open) :
     return str(pred)+"/5", False
 
 if __name__ == '__main__':
-    app.run(debug=False, host="0.0.0.0", port=8080)
+    app.run(debug=True)
+    #app.run(debug=False, host="0.0.0.0", port=8080)
