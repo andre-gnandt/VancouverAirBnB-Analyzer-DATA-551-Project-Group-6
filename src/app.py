@@ -5,7 +5,8 @@ import os
 import plotly.express as px
 from dash import html
 
-from src.ml_nn import (
+#For deploy: replace ml_nn with src.ml_nn
+from ml_nn import (
     COMMON_CATEGORICAL,
     COMMON_NUMERIC,
     load_dataset,
@@ -985,5 +986,4 @@ def calculate_rating(nclicks, is_open) :
     return str(pred)+"/5", False
 
 if __name__ == '__main__':
-    #app.run(debug=True)
     app.run(debug=False, host="0.0.0.0", port=8080)
